@@ -1,90 +1,67 @@
-﻿IF EXISTS (SELECT*FROM sys.databases WHERE Name='Example5')
-	DROP DATABASES Example5
+--1
+CREATE DATABASE AZbank
 GO
-
-CREATE DATABASE Example5
+USE AZbank;
 GO
-
-USE Example5
-GO
-
---TẠO BẢNG LỚP HỌC
-CREATE TABLE LopHoc(
-	MaLopHoc INT PRIMARY KEY IDENTITY,
-	TenLopHoc VARCHAR(10)
+--2
+CREATE TABLE Customer(
+	CustomerId int PRIMARY KEY NOT NULL,
+	Name nvaRchar(50) NULL,
+	City nvarchar(50) NULL,
+	Country nvarchar(50) NULL,
+	Phone nvaRchar(15) NULL,
+	Email nvarchar(50) NULL,
 	)
 	GO
-	--TẠO BẢNG SINH VIÊN CÓ KHÓA NGOẠI LÀ CỘT MaLopHoc, nối với bảng LopHoc
-	CREATE TABLE SinhVien(
-		MaSV int PRIMARY KEY,
-		TenSV varchar(40),
-		MaLopHoc int,
-		CONSTRAINT fk FOREIGN KEY (MaLopHoc) REFERENCES LopHoc(MaLopHoc)
-		)
-		GO
-		--TẠO BẢNG SANPHAM VỚI MỘT NULL
-		CREATE TABLE SanPham(
-		MaSP int NOT NULL,
-		TenSP varchar(40) NULL
-		)
-		GO
-		--TẠO BẢN CÓ THUỘC DEFAULT CHO CỘT PRICE
-		CREATE TABLE StoreProduct(
-		ProductID int NOT NULL,
-		Name varchar(40) NOT NULL,
-		Price money NOT NULL DEFAULT (100)
-		)
-		--THỬ KIỂM TRA GIÁ TRỊ DEFAULT CÓ SỬ DỤNG HAY KO
-		INSERT INTO StoreProduct (Price, Name) values(111,Rivets)
-		go
-		--tạo bảng Contact PHone với thuộc tính identity
-		CREATE TABLE ContactPhone(
-		Person_ID int Identity(500,1) NOT NULL,
-		MobileNumber bigint NOT NULL
-		)
-		GO
-		--Tạo cột nhận dạng duy nhất tổng thể
-		CREATE TABLE CellularPhone(
-		Person_ID uniqueidentifier DEFAULT NEWID() NOT NULL,
-		PersonName varchar(60) NOT NULL
-		)
-		--CHÈN MỘT RECORD VÒA
-		INSERT INTO CellularPhone(PersonName) VALUES('WILLIAM SMITH')
-		GO
-		--KIỂM TRA GIÁ TRỊ CỦA CỘT PERSON_ID TỰ ĐỘNG SINH RA
-		SELECT*FROM CellularPhone
-		GO
-		--TẠO BẢN CONTACTPHONE VỚI CỘT MBLIENUMABER CÓ THUỘC TÍNH UNIQUE
-		CREATE TABLE ContactPhone(
-		Person_ID int PRIMARY KEY,
-		MobileNumber bigint UNIQUE,
-		ServiceProvider varchar(30),
-		LandlineNumber bigint UNIQUE
-		)
-		--Chèn 2 bản ghi có giá trji giống nha ở cột MobileNumber và LanlieNUmber đẻ quan sát lỗi
-		INSERT INTO ContactPhone Values (101,98334284,'Hutch',Null)
-		INSERT INTO ContactPhone VALUES (102,10121,'ALEX',NULL)
-		GO
-		--TẠO BẢN PHONEEXXPESES CỌT 1 CỘT CHECK Ở CỘT AMOUNT
-		CREATE TABLE PhoneExpenses(
-		Expense_ID int PRIMARY KEY,
-		MobileNumber bigint FOREIGN KEY REFERENCES ContactPhone(MobilePhone),
-		Amount bigint CHECK (Amount>0)
-		)
-		GO
-		--CHỈNH SỬA CỘT TRONG BẢN
-		ALTER TABLE ContactPhone
-		Alter COLUMN ServiceProvider varchar(45)
-		go
-		--xóa cột trong bảng
-		ALTER TABLE ContactPhone
-		DROP COLUMN ServiceProvider
-		go
-		--them một ràng buộc vào bảng
-		ALTER TABLE ContactPhone ADD CONSTRAINT CHK_RC CHECK(RentalCharge)
-		GO
-		--XÓA MỘT RNAGF BUỘC
-		ALTER TABLE Person.ContactPhone
-		DROP CONSTRAINT CHK_RC
+	CREATE TABLE CustomerAccount(
+	AccountNumber char(9) PRIMARY KEY NOT NULL,
+	CustomerId int NOT NULL,
+	FOREIGN KEY (CustomerId) REFERENCES Customer(CustomerId),
+	Balance money NOT NULL,
+	MinAccount money NULL,
+	)
+	GO
+	CREATE TABLE CustomerTransaction(
+	TransactionId int PRIMARY KEY NOT NULL,
+	AccountNumber char(9) NULL,
+	FOREIGN KEY (AccountNumber) REFERENCES CustomerAccount(AccountNumber),
+	TransactionDate smalldatetime NULL,
+	Amount money NULL,
+	DepositorWithdraw bit NULL,
+	)
+	GO
+	--3
+	INSERT INTO Customer VALUES (27,'Minh','Hanoi','Vietnam',098764534,'asd@gmail.com');
+	INSERT INTO Customer VALUES (35,'Khai','HCM','Vietnam',024424534,'dad@gmail.com');
+	INSERT INTO Customer VALUES (29,'Long','ThanhHoa','Vietnam',0987343534,'zxc@gmail.com');
+	GO
 
-		-- create a table with different date and time fieldsCREATE TABLE Users (  id INT,  full_name VARCHAR(50),  date_of_birth DATE,  last_login DATETIME,  registered_at TIMESTAMP);SELECT*FROM Users-- insert values into the Users table.INSERT INTO UsersVALUES(1, 'Harry Potter', '1999-04-14', '2022-04-22 10:34:53.44', DEFAULT);
+	INSERT INTO CustomerAccount  VALUES (10,27,1113.34,3345);
+	INSERT INTO CustomerAccount  VALUES (112,35,145.45,554);
+	INSERT INTO CustomerAccount  VALUES (102,29,13.543,2342);
+	GO
+	INSERT INTO CustomerTransaction VALUES(3,10,'2022-12-2',1100,1);
+	INSERT INTO CustomerTransaction VALUES(65,112,'2024-12-2',12200,1);
+	INSERT INTO CustomerTransaction VALUES(43,102,'2023-6-2',1000,1);
+	GO
+	--4
+	SELECT*FROM Customer 
+	WHERE City='Hanoi';	
+	GO
+	--5
+	SELECT Customer.Name,Customer.Phone,Customer.Email,CustomerAccount.AccountNumber,CustomerAccount.Balance
+	FROM Customer
+	LEFT JOIN CustomerAccount ON Customer.CustomerId= CustomerAccount.CustomerId
+	GO
+	--6
+	ALTER TABLE CustomerTransaction
+	ADD CONSTRAINT CHECK_Amount CHECK (Amount > 0 AND Amount <= 1000000);
+	GO
+	--7
+	CREATE VIEW vCustomerTransactions AS
+	SELECT V.Name,X.AccountNumber,X.TransactionDate,X.Amount,X.DepositorWithdraw
+	FROM Customer V
+	INNER JOIN CustomerAccount Z ON V.CustomerId=Z.CustomerId
+	INNER JOIN CustomerTransaction X ON Z.AccountNumber=X.AccountNumber;
+	GO
+	SELECT*FROM vCustomerTransactions;
